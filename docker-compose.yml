@@ -1,0 +1,63 @@
+services:
+  mongo:
+    image: mongo:8.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test:
+        - CMD
+        - mongosh
+        - --quiet
+        - --eval
+        - "quit(db.adminCommand({ping: 1}).ok ? 0 : 1)"
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+
+  api:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-instagram_reports}
+      APIFY_ACTOR_ID: ${APIFY_ACTOR_ID:-instagram-data-api/instagram-tagged-scraper}
+      MAX_APIFY_COST_USD: ${MAX_APIFY_COST_USD:-0.20}
+      APIFY_PRICE_PER_1000_RESULTS_USD: ${APIFY_PRICE_PER_1000_RESULTS_USD:-0.37}
+      APIFY_RUN_TIMEOUT_SECONDS: ${APIFY_RUN_TIMEOUT_SECONDS:-300}
+      APIFY_WAIT_SECONDS: ${APIFY_WAIT_SECONDS:-360}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  worker:
+    build: .
+    restart: unless-stopped
+    command: ["python", "-m", "app.worker"]
+    env_file:
+      - .env
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-instagram_reports}
+      APIFY_ACTOR_ID: ${APIFY_ACTOR_ID:-instagram-data-api/instagram-tagged-scraper}
+      MAX_APIFY_COST_USD: ${MAX_APIFY_COST_USD:-0.20}
+      APIFY_PRICE_PER_1000_RESULTS_USD: ${APIFY_PRICE_PER_1000_RESULTS_USD:-0.37}
+      APIFY_RUN_TIMEOUT_SECONDS: ${APIFY_RUN_TIMEOUT_SECONDS:-300}
+      APIFY_WAIT_SECONDS: ${APIFY_WAIT_SECONDS:-360}
+      WORKER_POLL_SECONDS: ${WORKER_POLL_SECONDS:-2}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo_data:
