@@ -95,10 +95,21 @@ class Creator(BaseModel):
 class PostMetrics(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    likes: int | None = None
+    likes: int = 0
     comments: int | None = None
     engagement_count: int | None = None
     engagement_rate_percent: float | None = None
+
+    @field_validator("likes", mode="before")
+    @classmethod
+    def missing_likes_are_zero(cls, value: Any) -> int:
+        return 0 if value is None else value
+
+    @model_validator(mode="after")
+    def calculate_engagement_when_possible(self) -> PostMetrics:
+        if self.engagement_count is None and self.comments is not None:
+            self.engagement_count = self.likes + self.comments
+        return self
 
 
 class ReportPost(BaseModel):
@@ -117,8 +128,13 @@ class ReportSummary(BaseModel):
     sampled_at: datetime
     posts_in_period: int
     ranked_by: Literal["likes_plus_comments"] = "likes_plus_comments"
-    total_likes: int | None
+    total_likes: int
     total_comments: int | None
+
+    @field_validator("total_likes", mode="before")
+    @classmethod
+    def missing_total_likes_are_zero(cls, value: Any) -> int:
+        return 0 if value is None else value
 
 
 class ApifyRun(BaseModel):
@@ -142,6 +158,12 @@ class TagReport(BaseModel):
     summary: ReportSummary | None = None
     posts: list[ReportPost] = Field(default_factory=list)
     apify: ApifyRun | None = None
+
+    @model_validator(mode="after")
+    def recalculate_total_likes(self) -> TagReport:
+        if self.summary is not None:
+            self.summary.total_likes = sum(post.metrics.likes for post in self.posts)
+        return self
 
 
 def report_id_for_query(query: ReportQuery) -> str:
@@ -180,9 +202,11 @@ def report_post_from_actor(item: dict[str, Any]) -> ReportPost | None:
         return None
 
     likes = _optional_count(item.get("likes"))
+    if likes is None:
+        likes = 0
     comments = _optional_count(item.get("comments"))
     followers = _optional_count(item.get("ownerFollowers"))
-    engagement = likes + comments if likes is not None and comments is not None else None
+    engagement = likes + comments if comments is not None else None
     engagement_rate = (
         engagement / followers * 100
         if engagement is not None and followers is not None and followers > 0
@@ -246,6 +270,8 @@ def summarize_posts(posts: list[ReportPost], sampled_at: datetime) -> ReportSumm
         values = [getattr(post.metrics, field) for post in posts]
         if not values:
             return 0
+        if field == "likes":
+            return sum(value or 0 for value in values)
         if any(value is None for value in values):
             return None
         return sum(value for value in values if value is not None)

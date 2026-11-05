@@ -128,12 +128,13 @@ Raport zawiera zapytanie, status, znaczniki czasu, podsumowanie, listę wpisów 
 
 - `summary.posts_in_period` — liczba dopasowanych wpisów po filtrach.
 - `summary.ranked_by` — kryterium rankingu, obecnie `likes_plus_comments`.
-- `summary.total_likes` i `summary.total_comments` — sumy liczników. Wartość będzie `null`, gdy dla co najmniej jednego wpisu w danej sumie brakuje metryki.
-- `posts[].metrics.engagement_count` — suma polubień i komentarzy; pozostaje `null`, jeśli brakuje którejś z tych wartości.
+- `summary.total_likes` — suma polubień. Brak polubień zwrócony jako `null` przez aktora jest normalizowany do `0`, więc suma zawsze jest liczbą.
+- `summary.total_comments` — suma komentarzy; będzie `null`, gdy dla co najmniej jednego wpisu brakuje tej metryki.
+- `posts[].metrics.engagement_count` — suma polubień i komentarzy, jeśli liczba komentarzy jest dostępna. Brak polubień jest liczony jako `0`.
 - `posts[].metrics.engagement_rate_percent` — `engagement_count / followers_count × 100`, jeśli aktor zwróci dodatnią liczbę obserwujących; w przeciwnym razie `null`.
 - `apify.cost_usd` — koszt runu zwrócony przez Apify; może być `null`.
 
-Metryki są odczytem z chwili pobrania. Projekt nie wylicza zasięgu, wyświetleń, konwersji ani zmian historycznych. Ponowne wysłanie identycznego zapytania zwraca ten sam raport zamiast tworzyć duplikat zadania.
+Metryki są odczytem z chwili pobrania. Aktor może zwrócić `likes: null`, między innymi gdy licznik polubień jest ukryty; aplikacja zapisuje taki przypadek jako `0`, zgodnie z przyjętą regułą sumowania. W raporcie nie da się wtedy odróżnić ukrytego licznika od potwierdzonego zera. Projekt nie wylicza zasięgu, wyświetleń, konwersji ani zmian historycznych. Ponowne wysłanie identycznego zapytania zwraca ten sam raport zamiast tworzyć duplikat zadania.
 
 ## Komendy i procesy
 
