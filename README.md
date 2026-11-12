@@ -221,9 +221,3 @@ Przydatne kontrole:
 - [Aktor Instagram Tagged Scraper w Apify Store](https://apify.com/instagram-data-api/instagram-tagged-scraper)
 - [Cennik Apify](https://apify.com/pricing)
 - Dokumentacja API aplikacji: `http://localhost:8000/docs` po uruchomieniu usług.
-
-## Źródła informacji i elementy do uzupełnienia
-
-README opracowano na podstawie `app/api.py`, `app/apify.py`, `app/db.py`, `app/models.py`, `app/worker.py`, testów i próbki w `tests/`, a także `Dockerfile`, `docker-compose.yml`, `requirements.txt`, `.env.example`, `.gitignore` i `.dockerignore`.
-
-W repozytorium nie ma pliku licencji, potwierdzonych danych autorów ani zrzutów ekranu. Przed publikacją na GitHubie uzupełnij licencję i autorów, jeśli mają być podani. Nie dodawaj tokenu Apify do repozytorium.
